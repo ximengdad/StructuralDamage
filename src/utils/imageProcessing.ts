@@ -1,5 +1,6 @@
 import { AnalysisResult, DetectionResult } from '../types/damage';
 import { damageClasses, damageClassNames, severityLevels } from '../data/damageClasses';
+import { DetectionSettings } from '../components/SettingsPanel';
 
 export const processImage = async (imageFile: File): Promise<AnalysisResult> => {
   return new Promise((resolve) => {
@@ -31,6 +32,57 @@ export const processImage = async (imageFile: File): Promise<AnalysisResult> => 
     };
     reader.readAsDataURL(imageFile);
   });
+};
+
+export const simulateAIDetection = async (
+  imageUrl: string, 
+  settings: DetectionSettings
+): Promise<DamageDetection[]> => {
+  // 模拟AI检测延迟
+  await new Promise(resolve => setTimeout(resolve, settings.enablePreprocessing ? 3000 : 2000));
+  
+  // 创建图像元素来获取尺寸
+  const img = new Image();
+  img.src = imageUrl;
+  await new Promise(resolve => {
+    img.onload = resolve;
+  });
+  
+  const detections: DamageDetection[] = [];
+  const numDetections = Math.floor(Math.random() * 8) + 2; // 2-9个检测结果
+  const severities = ['轻微', '中等', '严重', '危险'];
+  
+  for (let i = 0; i < numDetections; i++) {
+    const damageClass = damageClasses[Math.floor(Math.random() * damageClasses.length)];
+    const severity = severities[Math.floor(Math.random() * severities.length)];
+    
+    // 根据设置调整置信度
+    let confidence = 0.3 + Math.random() * 0.6;
+    if (settings.enablePreprocessing) {
+      confidence = Math.min(confidence + 0.1, 0.95); // 预处理可以提高置信度
+    }
+    
+    // 过滤低于阈值的检测结果
+    if (confidence < settings.confidenceThreshold) {
+      continue;
+    }
+    
+    detections.push({
+      id: `detection_${i}`,
+      type: damageClass.name,
+      confidence,
+      bbox: {
+        x: Math.random() * (img.width - 100),
+        y: Math.random() * (img.height - 100),
+        width: 50 + Math.random() * 150,
+        height: 50 + Math.random() * 150
+      },
+      severity,
+      description: `检测到${damageClass.name}，严重程度：${severity}`
+    });
+  }
+  
+  return detections;
 };
 
 const generateMockDetections = (width: number, height: number): DetectionResult[] => {
