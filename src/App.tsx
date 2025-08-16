@@ -1,59 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { ImageUploader } from './components/ImageUploader';
 import { ImageViewer } from './components/ImageViewer';
 import { ResultsPanel } from './components/ResultsPanel';
-import { StatisticsPanel } from './components/StatisticsPanel';
-import { ReportGenerator } from './components/ReportGenerator';
-import { HistoryPanel } from './components/HistoryPanel';
-import { SettingsPanel, DetectionSettings } from './components/SettingsPanel';
 import { AnalysisResult } from './types/damage';
 import { processImage } from './utils/imageProcessing';
 import { Building, Shield, Zap } from 'lucide-react';
-import { Tabs, Tab } from '@headlessui/react';
-import { 
-  PhotoIcon, 
-  ChartBarIcon, 
-  DocumentTextIcon, 
-  ClockIcon, 
-  Cog6ToothIcon 
-} from '@heroicons/react/24/outline';
 
 function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [settings, setSettings] = useState<DetectionSettings>({
-    confidenceThreshold: 0.5,
-    enablePreprocessing: true,
-    showBoundingBoxes: true,
-    showConfidenceScores: true,
-    autoSave: true,
-    language: 'zh'
-  });
-  const historyRef = useRef<any>(null);
 
   const handleImageSelect = async (file: File) => {
     setIsProcessing(true);
     setFileName(file.name);
     
     try {
-      const results = await simulateAIDetection(imageUrl, settings);
-      // 模拟处理时间
-      await new Promise(resolve => setTimeout(resolve, 2000));
       const analysisResult = await processImage(file);
       setResult(analysisResult);
-      
-      // 自动保存到历史记录
-      if (settings.autoSave && historyRef.current) {
-        const riskLevel = calculateRiskLevel(results);
-        historyRef.current.saveToHistory({
-          imageName: file.name,
-          detectionsCount: results.length,
-          riskLevel,
-          thumbnail: imageUrl
-        });
-      }
     } catch (error) {
       console.error('处理图片时出错:', error);
     } finally {
@@ -61,125 +26,10 @@ function App() {
     }
   };
 
-  const calculateRiskLevel = (detections: DamageDetection[]): string => {
-    if (detections.length === 0) return '低风险';
-    
-    const severeCounts = detections.filter(d => d.severity === '严重').length;
-    const moderateCounts = detections.filter(d => d.severity === '中等').length;
-    
-    if (severeCounts >= 3) return '严重风险';
-    if (severeCounts >= 1 || moderateCounts >= 5) return '高风险';
-    if (moderateCounts >= 2 || detections.length >= 5) return '中等风险';
-    return '低风险';
-  };
-
-  const handleLoadHistory = (historyItem: any) => {
-    // 这里可以实现从历史记录加载检测结果的逻辑
-    console.log('Loading history item:', historyItem);
-  };
-
-  const riskLevel = calculateRiskLevel(detections);
-
-  const tabs = [
-    { name: '图像检测', icon: PhotoIcon },
-    { name: '统计分析', icon: ChartBarIcon },
-    { name: '报告生成', icon: DocumentTextIcon },
-    { name: '历史记录', icon: ClockIcon },
-    { name: '系统设置', icon: Cog6ToothIcon }
-  ];
-
-  const handleReset = () => {
-    setResult(null);
-    setFileName('');
-    setIsProcessing(false);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Tabs as="div" className="w-full">
-          <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-6">
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.name}
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700 transition-all
-                   ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2
-                   ${selected
-                     ? 'bg-white shadow'
-                     : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
-                   }`
-                }
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <tab.icon className="w-5 h-5" />
-                  <span>{tab.name}</span>
-                </div>
-              </Tab>
-            ))}
-          </Tab.List>
-          
-          <header className="mb-6">
-            <div className="text-center">
-              <h1 className="text-xl font-bold text-gray-900">
-                结构损伤智能检测平台
-              </h1>
-              <p className="text-sm text-gray-600">
-                基于深度学习的建筑损伤识别系统
-              </p>
-            </div>
-          </header>
-          
-          <Tab.Panels className="mt-2">
-            {/* 图像检测面板 */}
-            <Tab.Panel className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <ImageUploader onImageUpload={handleImageUpload} isProcessing={isProcessing} />
-                  {selectedImage && (
-                    <ImageViewer 
-                      imageSrc={selectedImage} 
-                      detections={detections}
-                      isProcessing={isProcessing}
-                      settings={settings}
-                    />
-                  )}
-                </div>
-                <div>
-                  <ResultsPanel detections={detections} riskLevel={riskLevel} />
-                </div>
-              </div>
-            </Tab.Panel>
-
-            {/* 统计分析面板 */}
-            <Tab.Panel>
-              <StatisticsPanel detections={detections} />
-            </Tab.Panel>
-
-            {/* 报告生成面板 */}
-            <Tab.Panel>
-              <ReportGenerator 
-                detections={detections} 
-                imageSrc={selectedImage} 
-                riskLevel={riskLevel}
-              />
-            </Tab.Panel>
-
-            {/* 历史记录面板 */}
-            <Tab.Panel>
-              <HistoryPanel ref={historyRef} onLoadHistory={handleLoadHistory} />
-            </Tab.Panel>
-
-            {/* 系统设置面板 */}
-            <Tab.Panel>
-              <SettingsPanel onSettingsChange={setSettings} />
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tabs>
-      </div>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!result ? (
           <div className="space-y-8">
@@ -255,9 +105,25 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <ImageViewer result={result} fileName={fileName} />
-            <ResultsPanel result={result} fileName={fileName} />
+          <div className="space-y-6">
+            {/* 返回按钮 */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setFileName('');
+                }}
+                className="btn btn-secondary"
+              >
+                ← 返回上传
+              </button>
+              <h2 className="text-2xl font-bold text-gray-900">检测结果</h2>
+            </div>
+            
+            <div className="grid lg:grid-cols-2 gap-8">
+              <ImageViewer result={result} fileName={fileName} />
+              <ResultsPanel result={result} fileName={fileName} />
+            </div>
           </div>
         )}
       </main>

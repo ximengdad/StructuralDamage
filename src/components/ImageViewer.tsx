@@ -1,20 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { AnalysisResult } from '../types/damage';
-import { DetectionSettings } from './SettingsPanel';
 import { damageClasses } from '../data/damageClasses';
 
 interface ImageViewerProps {
   result: AnalysisResult;
   fileName: string;
 }
-  settings: DetectionSettings;
 
-export const ImageViewer: React.FC<ImageViewerProps> = ({ 
-  imageSrc, 
-  detections, 
-  isProcessing, 
-  settings 
-}) => {
+export const ImageViewer: React.FC<ImageViewerProps> = ({ result, fileName }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -25,12 +18,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
       const img = imageRef.current;
 
       img.onload = () => {
-      }
-      detections
-        .filter(detection => detection.confidence >= settings.confidenceThreshold)
-        .forEach((detection) => {
-        }
-        )
+        canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         
         if (ctx) {
@@ -43,48 +31,42 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
               const damageClass = damageClasses.find(dc => dc.name === detection.className);
               const color = damageClass?.color || '#FF0000';
               
+              // 绘制边界框
               ctx.strokeStyle = color;
               ctx.lineWidth = 3;
               ctx.strokeRect(
                 detection.bbox.x,
                 detection.bbox.y,
                 detection.bbox.width,
-              )
+                detection.bbox.height
+              );
+              
+              // 绘制标签背景
+              const label = `${detection.className} (${Math.round(detection.confidence * 100)}%)`;
+              ctx.font = '14px Arial';
+              const textMetrics = ctx.measureText(label);
+              const textWidth = textMetrics.width;
+              const textHeight = 18;
+              
+              ctx.fillStyle = color;
+              ctx.fillRect(
+                detection.bbox.x, 
+                detection.bbox.y - textHeight - 4, 
+                textWidth + 8, 
+                textHeight + 4
+              );
+              
+              // 绘制标签文字
+              ctx.fillStyle = 'white';
+              ctx.fillText(label, detection.bbox.x + 4, detection.bbox.y - 6);
             }
-          }
-          )
+          });
         }
-        if (settings.showBoundingBoxes) {
-          // 设置边界框样式
-          ctx.strokeStyle = getSeverityColor(severity);
-          ctx.lineWidth = 2;
-          ctx.setLineDash([]);
-          
-          // 绘制边界框
-          ctx.strokeRect(bbox.x, bbox.y, bbox.width, bbox.height);
-        }
-        
-        if (settings.showConfidenceScores) {
-          // 绘制标签背景
-          const label = `${type} (${(confidence * 100).toFixed(1)}%)`;
-          ctx.font = '12px Arial';
-          const textMetrics = ctx.measureText(label);
-          const textWidth = textMetrics.width;
-          const textHeight = 16;
-          
-          ctx.fillStyle = getSeverityColor(severity);
-          ctx.fillRect(bbox.x, bbox.y - textHeight - 4, textWidth + 8, textHeight + 4);
-          
-          // 绘制标签文字
-          ctx.fillStyle = 'white';
-          ctx.fillText(label, bbox.x + 4, bbox.y - 6);
-        }
+      };
+      
+      img.src = result.processedImage;
     }
-  }
-  )
-  useEffect(() => {
-    drawDetections();
-  }, [detections, settings]);
+  }, [result]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
