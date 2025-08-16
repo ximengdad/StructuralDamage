@@ -37,6 +37,7 @@ function App() {
     setIsProcessing(true);
     setFileName(file.name);
     
+    try {
       const results = await simulateAIDetection(imageUrl, settings);
       // 模拟处理时间
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -119,12 +120,18 @@ function App() {
               </Tab>
             ))}
           </Tab.List>
-                <h1 className="text-xl font-bold text-gray-900">
-                  结构损伤智能检测平台
-                </h1>
-                <p className="text-sm text-gray-600">
-                  基于深度学习的建筑损伤识别系统
-                </p>
+          
+          <header className="mb-6">
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900">
+                结构损伤智能检测平台
+              </h1>
+              <p className="text-sm text-gray-600">
+                基于深度学习的建筑损伤识别系统
+              </p>
+            </div>
+          </header>
+          
           <Tab.Panels className="mt-2">
             {/* 图像检测面板 */}
             <Tab.Panel className="space-y-6">
@@ -145,8 +152,33 @@ function App() {
                 </div>
               </div>
             </Tab.Panel>
-        </div>
-      </header>
+
+            {/* 统计分析面板 */}
+            <Tab.Panel>
+              <StatisticsPanel detections={detections} />
+            </Tab.Panel>
+
+            {/* 报告生成面板 */}
+            <Tab.Panel>
+              <ReportGenerator 
+                detections={detections} 
+                imageSrc={selectedImage} 
+                riskLevel={riskLevel}
+              />
+            </Tab.Panel>
+
+            {/* 历史记录面板 */}
+            <Tab.Panel>
+              <HistoryPanel ref={historyRef} onLoadHistory={handleLoadHistory} />
+            </Tab.Panel>
+
+            {/* 系统设置面板 */}
+            <Tab.Panel>
+              <SettingsPanel onSettingsChange={setSettings} />
+            </Tab.Panel>
+          </Tab.Panels>
+        </Tabs>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!result ? (
@@ -237,31 +269,8 @@ function App() {
             <p className="mb-2">
               结构损伤智能检测平台 - 基于深度学习的建筑安全评估系统
             </p>
-            {/* 统计分析面板 */}
-            <Tab.Panel>
-              <StatisticsPanel detections={detections} />
-            </Tab.Panel>
-
-            {/* 报告生成面板 */}
-            <Tab.Panel>
-              <ReportGenerator 
-                detections={detections} 
-                imageSrc={selectedImage} 
-                riskLevel={riskLevel}
-              />
-            </Tab.Panel>
-
-            {/* 历史记录面板 */}
-            <Tab.Panel>
-              <HistoryPanel ref={historyRef} onLoadHistory={handleLoadHistory} />
-            </Tab.Panel>
-
-            {/* 系统设置面板 */}
-            <Tab.Panel>
-              <SettingsPanel onSettingsChange={setSettings} />
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tabs>
+          </div>
+        </div>
       </footer>
     </div>
   );
