@@ -25,9 +25,12 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
       const img = imageRef.current;
 
       img.onload = () => {
+      }
       detections
         .filter(detection => detection.confidence >= settings.confidenceThreshold)
         .forEach((detection) => {
+        }
+        )
         canvas.height = img.naturalHeight;
         
         if (ctx) {
@@ -46,6 +49,11 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
                 detection.bbox.x,
                 detection.bbox.y,
                 detection.bbox.width,
+              )
+            }
+          }
+          )
+        }
         if (settings.showBoundingBoxes) {
           // 设置边界框样式
           ctx.strokeStyle = getSeverityColor(severity);
@@ -71,6 +79,9 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
           ctx.fillStyle = 'white';
           ctx.fillText(label, bbox.x + 4, bbox.y - 6);
         }
+    }
+  }
+  )
   useEffect(() => {
     drawDetections();
   }, [detections, settings]);
